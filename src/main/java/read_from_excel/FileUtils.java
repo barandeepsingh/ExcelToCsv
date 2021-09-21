@@ -7,23 +7,37 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class FileUtils {
 
-    public static void writeToCsv(String outputFilePath, List<String> dataToWrite) {
+    public static void writeToCsv(String outputFilePath, List<String> dataToWrite, Map<Integer,Integer> mapColumns, int totalColumns) {
         try {
-            Files.write(Paths.get(outputFilePath), dataToWrite);
+            List<String> stringList = dataToWrite.stream().map(inputString -> changeMappingOfColumns(inputString, mapColumns, totalColumns)).collect(Collectors.toList());
+            stringList.set(0,dataToWrite.get(0));
+            Files.write(Paths.get(outputFilePath), stringList);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    private static String changeMappingOfColumns(String inputString, Map<Integer,Integer> mapColumns, int totalColumns) {
+        String[] outputArray = new String[totalColumns];
+        Arrays.fill(outputArray,"");
+        String[] inputArray = inputString.split(",");
+        IntStream.rangeClosed(0,totalColumns).forEach(columnNumber->{
+            if(mapColumns.containsKey(columnNumber)){
+                int resultColumn = mapColumns.get(columnNumber);
+                outputArray[resultColumn] = inputArray[columnNumber];
+            }
+        });
+        return String.join(",",outputArray);
+    }
+
     public static List<String> getDataFromExcel(String firstLine, String filePath, String sheetName) {
-        List<String> finalList = new ArrayList();
+        ArrayList<String> finalList = new ArrayList<>();
         //Header for the final csv file
         finalList.add(firstLine);
         if (filePath != null && !"".equals(filePath.trim()) && sheetName != null && !"".equals(sheetName.trim())) {
